@@ -45,10 +45,6 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Validates the JWT token using the loaded RSA public key and returns the Claims payload.
-     * Throws ExpiredJwtException if the token is expired, or JwtException for any tampering/malformation.
-     */
     public Claims validateAndGetClaims(String token) throws ExpiredJwtException, JwtException {
         return Jwts.parser()
                 .verifyWith(publicKey)
@@ -77,18 +73,15 @@ public class JwtUtil {
             throw new IllegalArgumentException("Public key path must not be null or empty");
         }
 
-        // 1. If raw PEM is passed directly
         if (pathStr.contains("-----BEGIN")) {
             return pathStr;
         }
 
-        // 2. Try direct file path (e.g. keys/public.pem from root)
         Path path = Path.of(pathStr);
         if (Files.exists(path)) {
             return Files.readString(path);
         }
 
-        // 3. Try ResourceLoader (file: / classpath:)
         String location = pathStr.startsWith("classpath:") || pathStr.startsWith("file:") ? pathStr : "file:" + pathStr;
         Resource resource = resourceLoader.getResource(location);
         if (resource.exists()) {
@@ -97,7 +90,6 @@ public class JwtUtil {
             }
         }
 
-        // 4. Try fallback to classpath
         Resource classpathResource = resourceLoader.getResource("classpath:" + pathStr);
         if (classpathResource.exists()) {
             try (InputStream is = classpathResource.getInputStream()) {
@@ -105,7 +97,6 @@ public class JwtUtil {
             }
         }
 
-        // 5. Try fallback classpath with /keys/public.pem
         Resource fallbackClasspath = resourceLoader.getResource("classpath:/keys/public.pem");
         if (fallbackClasspath.exists()) {
             try (InputStream is = fallbackClasspath.getInputStream()) {
